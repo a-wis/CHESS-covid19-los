@@ -5,7 +5,6 @@
 /////                            March - May 2020
 /////    
 /////   
-// Authors: Nick Shryane & Maria Pampaka
 
 ////////////////////////////////////////////////////////////////////////////////
 //     Data
@@ -13,6 +12,11 @@
 //   The CHESS data used in the study above are not publicly available. 
 //   The code below is made available to allow readers to evaluate the way
 //    the data was coded and analysed. 
+
+
+// FOR CHECKING RESULTS
+use "\\10.2.82.9\humrss$\snapped\replicated\Research\SOSS\SOST\SOST-RAMP-PROJECT\Data\Data - Processed\26th May data processed\SOST paper\CHESS_Case_Report_MASTERNEW_2020-05-26.dtanumeric", clear
+
 
 ////////////////////////////////////////////////////////////////////////////////
 //     Covariates
@@ -30,12 +34,102 @@ gen icucat = icupolicychange  // 3-category variable for admission period
 gen ecmo = respiratorysupportecmo  
 recode ecmo (2=1) (missing=0)      // dummy variable for ECMO ventilation
 
-//// Health Risk scores (continuous variable, high = many comorbid conditions)
-sum RaschComor
-gen risk_c = RaschComor - r(mean) // mean-centre the risk scores 
-
 //// ethnicity
 tab ethnicity5 // 5-category variable for ethnicity
+
+
+//////////////// 
+//  Health risk Rasch scores
+
+rename chronicrespiratory resp 
+rename asthmarequiring asth
+rename chronicheart heart
+rename chronicrenal renal
+rename chronicliver liver
+rename chronicneurological neuro
+rename isdiabetes diab
+rename immunosuppressiontreatment immt 
+rename immunosuppressiondisease immd
+rename obesityclinical obc 
+rename hypertension hyp
+
+// Respiratory dummy
+tab resp, miss nol 
+recode resp (2=0)(3=.)(4=1)
+rename resp co_respi
+tab co_respi, miss
+
+//Asthma dummy
+tab asth, miss nol
+recode asth (2=0)(3=.)(4=1)
+rename asth co_asthm
+tab co_asthm
+
+// Heart dummy
+tab heart, miss nol
+recode heart (2=0)(3=.)(4=1)
+rename heart co_heart
+tab co_heart
+
+// hypertension dummy
+tab hyp, miss nol
+recode hyp (2=0)(3=.)(4=1)
+rename hyp co_hyper
+tab co_hyper
+
+// conditions that supress the immune system
+tab immd, miss nol
+tab immt
+recode immd immt (2=0)(3=.)(4=1)
+rename immd co_immud
+rename immt co_immut
+tab co_immud co_immut
+
+// diabetes dummy
+tab diab, miss nol
+recode diab (2=0)(3=.)(4=1)
+rename diab co_diab
+tab co_diab
+
+// Kidney disease dummy
+tab renal, miss nol
+recode renal (2=0)(3=.)(4=1)
+rename renal co_renal
+tab co_renal
+
+// Liver disease dummy
+tab liver, miss nol
+recode liver (2=0)(3=.)(4=1)
+rename liver co_liver
+tab co_liver
+
+// neurological dummy
+tab neuro, miss nol
+recode neuro (2=0)(3=.)(4=1)
+rename neuro co_neuro
+tab co_neuro
+
+// Obesity ternary 
+tab obc, miss
+tab obc, miss nol
+recode obc (2=1)(3=0)(4=.)(5=2) 
+rename obc co_obcli
+tab co_obcli, nol miss
+
+// How many cases have non-missing comorbidity data?
+egen cocount = rownonmiss(co_*)
+tab cocount
+// N = 504 have no comorbidity data
+// N = 3,086 have at least some comorbidity data
+
+///////// COMPUTE irt partial-credit model, only cases with some non-missing (N = 3,086)
+//irt pcm co_* if cocount > 0
+//predict irt0 if cocount > 0, latent
+
+
+///Compute Rasch PCM
+irt pcm co_* if cocount > 0, cns(a@1)
+predict irt0 if cocount > 0, latent
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -114,6 +208,14 @@ replace trustqualcat = 2 if trust_great == 1
 
 
 ////////////////////////////////////////////////////////////////////////////////
+//
+//						Descriptive stats
+//
+////////////////////
+
+sum female ageyear4 icucat ecmo irt0 ethnicity5
+
+////////////////////////////////////////////////////////////////////////////////
 //      
 //							AFT Models
 //
@@ -129,17 +231,21 @@ stset durationiculeavingicu, failure(dummy_outcome_icu = 1) if(trust_good==1 & a
 stdescribe
 // N = 3406, censored = 162; Mean LoS 13.2
 
+sum co_* 
+sum co_* if _st == 1
+
+
 /////// Models assuming WEIBULL baseline hazard
 
 // 1_1 Main effects only (no interactions)
-streg female b3.icucat b2.ageyear4 risk_c ecmo, distribution(weibull) time vce(cluster trustid)
+streg female b3.icucat b2.ageyear4 irt0 ecmo, distribution(weibull) time vce(cluster trustid)
 estat ic 
 est store w11
 predict los11w_mean, mean
 predict los11w_median
 
 // 1_2 Main effects + interactions
-streg ecmo female b3.icucat##b2.ageyear4 b3.icucat##c.risk_c, distribution(weibull) time vce(cluster trustid)
+streg ecmo female b3.icucat##b2.ageyear4 b3.icucat##c.irt0, distribution(weibull) time vce(cluster trustid)
 estat ic 
 est store w12
 predict los12w_mean, mean
@@ -148,14 +254,14 @@ predict los12w_median
 /////// Models assuming LOG-NORMAL baseline hazard
 
 // 1_1 Main effects 
-streg female b3.icucat b2.ageyear4 risk_c  ecmo, distribution(lognormal) time vce(cluster trustid)
+streg female b3.icucat b2.ageyear4 irt0 ecmo, distribution(lognormal) time vce(cluster trustid)
 estat ic 
 est store ln11
 predict los11logn_mean, mean
 predict los11logn_median
 
 // 1_2 Main effects + interactions
-streg ecmo female b3.icucat##b2.ageyear4 b3.icucat##c.risk_c, distribution(lognormal) time vce(cluster trustid)
+streg ecmo female b3.icucat##b2.ageyear4 b3.icucat##c.irt0, distribution(lognormal) time vce(cluster trustid)
 estat ic 
 est store ln12
 predict los12ln_mean, mean
@@ -177,11 +283,11 @@ sum los11w_mean los11w_median los11logn_mean los11logn_median, det  // log-norma
 //  The results below show the effects of the significant predictors for the 
 //   preferred, log-normal, main effects model
  
-table ageyear4 icucat,  c(mean los11logn_mean sd los11logn_mean n los11logn_mean) col row
+table ageyear4 icucat,  c(mean los11logn_mean mean los11logn_median sd los11logn_mean n los11logn_mean) col row
 table ageyear4 icucat,  c(mean los11logn_median sd los11logn_median n los11logn_median) col row
 
 // for comparison, the results from the Weibull model
-table ageyear4 icucat,  c(mean los11w_mean sd los11w_mean n los11w_mean) col row
+table ageyear4 icucat,  c(mean los11w_mean mean los11w_median sd los11w_mean n los11w_mean) col row
 table ageyear4 icucat,  c(mean los11w_median sd los11w_median n los11w_median) col row
 
 
@@ -215,7 +321,9 @@ graph twoway (kdensity los11logn_mean , bwidth(.8) ) ///
              (kdensity loslnE_mean, bwidth(.8) ) ///
 			 , scheme(sj) xtitle("LoS (Days)") ytitle(Density)       ///
 			 legend(label(1 "Model without ethnicity") label(2 "Model with ethnicity"))        ///
-			  xlabel(0 10 20 30) ylabel(0 .05 .1 0.15 0.2)			 
+			  xlabel(0 10 20 30) ylabel(0 .05 .1 0.15 0.2)	
+			  
+			  
 //////////////////////////////////////////////////////////////////////////////    
 // 	   Check for the effects of ethnicity and potential sample bias 
 
@@ -224,10 +332,10 @@ graph twoway (kdensity los11logn_mean , bwidth(.8) ) ///
 stset durationiculeavingicu, failure(dummy_outcome_icu = 1) if(trust_good==1 & ageyear > 17 & ethnicity5 != .)
 
 // Model without ethnicity as predictor 
-streg female b3.icucat b2.ageyear4 risk_c ecmo				, distribution(logn) time vce(cluster trustid)
+streg female b3.icucat b2.ageyear4 irt0 ecmo , distribution(logn) time vce(cluster trustid)
 estat ic
 // Model with ethnicity as predictor
-streg female b3.icucat b2.ageyear4 risk_c ecmo b1.ethnicity5, distribution(logn) time vce(cluster trustid)
+streg female b3.icucat b2.ageyear4 irt0 ecmo b1.ethnicity5, distribution(logn) time vce(cluster trustid)
 estat ic
 predict loslnE_mean, mean
 predict los1nE_median
