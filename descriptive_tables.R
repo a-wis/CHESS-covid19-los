@@ -6,9 +6,6 @@
 # Use after running "Code_Data_Cleaning_Master_File"
 # CHESS COVID19 CaseReport data released on 26-05-2020
 ########################################################
-# Autors:
-# Andrea Aparicio Castro
-#
 
 ##########################################################
 # durationiculeavingicu to either Death or Discharged
@@ -21,7 +18,7 @@ sex1 <- CHESS_CaseReport_Data %>%
             sd1 = sd(durationiculeavingicu),
             median1 = median(durationiculeavingicu),
             min1 = min(durationiculeavingicu),
-            max1 = max(durationiculeavingicu)) %>% ungroup()
+            max1 = max(durationiculeavingicu)) %>% ungroup() 
 
 age1 <- CHESS_CaseReport_Data %>%
   filter(durationiculeavingicu>0 & (finaloutcome=="Death"|finaloutcome=="Discharged"|finaloutcome=="Transfered")) %>%
@@ -43,7 +40,7 @@ ethnicity1 <- CHESS_CaseReport_Data %>%
             min1 = min(durationiculeavingicu),
             max1 = max(durationiculeavingicu)) %>% ungroup()
 
-rashcomor1 <- CHESS_CaseReport_Data %>%
+irt1 <- CHESS_CaseReport_Data %>%
   filter(durationiculeavingicu>0 & (finaloutcome=="Death"|finaloutcome=="Discharged"|finaloutcome=="Transfered")) %>%
   group_by(RaschComor1) %>% 
   summarise(n1 = n(),
@@ -93,15 +90,18 @@ region1 <- CHESS_CaseReport_Data %>%
             min1 = min(durationiculeavingicu),
             max1 = max(durationiculeavingicu)) %>% ungroup()
 
-weekofadmission11 <-  CHESS_CaseReport_Data %>%
-  filter(durationiculeavingicu>0 & (finaloutcome=="Death"|finaloutcome=="Discharged"|finaloutcome=="Transfered")) %>%
-  group_by(weekofadmission1) %>% 
-  summarise(n1 = n(),
-            mean1 = mean(durationiculeavingicu),
-            sd1 = sd(durationiculeavingicu),
-            median1 = median(durationiculeavingicu),
-            min1 = min(durationiculeavingicu),
-            max1 = max(durationiculeavingicu)) %>% ungroup()
+
+
+write.table(sex1,file = "clipboard",row.names = F,col.names = F)
+write.table(age1,file = "clipboard",row.names = F,col.names = F)
+write.table(ethnicity1,file = "clipboard",row.names = F,col.names = F)
+write.table(ecmo1,file = "clipboard",row.names = F,col.names = F)
+write.table(irt1,file = "clipboard",row.names = F,col.names = F)
+write.table(HAI1,file = "clipboard",row.names = F,col.names = F)
+write.table(icupolicychange1,file = "clipboard",row.names = F,col.names = F)
+write.table(region1,file = "clipboard",row.names = F,col.names = F)
+write.table(total1,file = "clipboard",row.names = F,col.names = F)
+
 
 ##########################################################
 # durationiculeavingicu for censored cases
@@ -136,7 +136,7 @@ ethnicity2 <- CHESS_CaseReport_Data %>%
             min2 = min(durationiculeavingicu),
             max2 = max(durationiculeavingicu)) %>% ungroup()
 
-rashcomor2 <- CHESS_CaseReport_Data %>%
+irt2 <- CHESS_CaseReport_Data %>%
   filter(durationiculeavingicu>0 & (finaloutcome1=="Censored")) %>%
   group_by(RaschComor1) %>% 
   summarise(n2 = n(),
@@ -186,15 +186,7 @@ region2 <- CHESS_CaseReport_Data %>%
             min2 = min(durationiculeavingicu),
             max2 = max(durationiculeavingicu)) %>% ungroup()
 
-weekofadmission12 <-  CHESS_CaseReport_Data %>%
-  filter(durationiculeavingicu>0 & (finaloutcome1=="Censored")) %>%
-  group_by(weekofadmission1) %>% 
-  summarise(n2 = n(),
-            mean2 = mean(durationiculeavingicu),
-            sd2 = sd(durationiculeavingicu),
-            median2 = median(durationiculeavingicu),
-            min2 = min(durationiculeavingicu),
-            max2 = max(durationiculeavingicu)) %>% ungroup()
+
 
 ######################################################################################
 # durationiculeavingicu for totals
@@ -218,7 +210,15 @@ total2 <- CHESS_CaseReport_Data %>%
             max2 = max(durationiculeavingicu))
 
 
-
+write.table(sex1,file = "clipboard",row.names = F,col.names = F)
+write.table(age1,file = "clipboard",row.names = F,col.names = F)
+write.table(ethnicity1,file = "clipboard",row.names = F,col.names = F)
+write.table(ecmo1,file = "clipboard",row.names = F,col.names = F)
+write.table(irt2[,-1],file = "clipboard",row.names = F,col.names = F)
+write.table(HAI1,file = "clipboard",row.names = F,col.names = F)
+write.table(icupolicychange1,file = "clipboard",row.names = F,col.names = F)
+write.table(region1,file = "clipboard",row.names = F,col.names = F)
+write.table(total1,file = "clipboard",row.names = F,col.names = F)
 
 
 
